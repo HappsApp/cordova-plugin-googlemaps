@@ -99,7 +99,7 @@ if (!cordova) {
   /*****************************************************************************
    * Add event lister to all html nodes under the <body> tag.
    *****************************************************************************/
-  (function() {
+  var pluginInternals = (function() {
     if (!document.body || !document.body.firstChild) {
       setTimeout(arguments.callee, 25);
       return;
@@ -114,6 +114,7 @@ if (!cordova) {
       //document.body.style.display='';
     //}, 0);
 
+    var isWatchingDomChanges = true;
     var prevDomPositions = {};
     var prevChildrenCnt = 0;
     var idlingCnt = -1;
@@ -370,7 +371,7 @@ if (!cordova) {
         // Stop timer when user does not touch the app and no changes are occurred during 1500ms.
         // (50ms * 5times + 200ms * 5times).
         // This save really the battery life significantly.
-        if (idlingCnt < 10) {
+        if (idlingCnt < 10 && isWatchingDomChanges) {
           if (idlingCnt === 8) {
             cordova.fireDocumentEvent("ecocheck", {});
           }
@@ -464,7 +465,9 @@ if (!cordova) {
                 MAPS[mapId].refreshLayout();
             }
         });
-        setTimeout(putHtmlElements, 50);
+        if (isWatchingDomChanges) {
+          setTimeout(putHtmlElements, 50);
+        }
         isChecking = false;
       }, null, 'CordovaGoogleMaps', 'putHtmlElements', [finalDomPositions]);
       child = null;
@@ -513,11 +516,25 @@ if (!cordova) {
       }, 1000);
     });
 
-    document.addEventListener("deviceready", putHtmlElements, {
-      once: true
-    });
-    document.addEventListener("plugin_touch", resetTimer);
-    window.addEventListener("orientationchange", resetTimer);
+    function enableDomWatching() {
+        isWatchingDomChanges = true;
+        document.addEventListener("deviceready", putHtmlElements, {
+            once: true
+        });
+        document.addEventListener("plugin_touch", resetTimer);
+        window.addEventListener("orientationchange", resetTimer);
+    }
+
+    function disableDomWatching() {
+        isWatchingDomChanges = false;
+        document.removeEventListener("deviceready", putHtmlElements);
+        document.removeEventListener("plugin_touch", resetTimer);
+        window.removeEventListener("orientationchange", resetTimer);
+    }
+
+    enableDomWatching();
+    document.addEventListener("gmForceDomCalculation", resetTimer);
+
 
     //----------------------------------------------------
     // Stop all executions if the page will be closed.
@@ -574,6 +591,15 @@ if (!cordova) {
       }
     };
 
+    return {
+      setDomWatching: function(enable) {
+        if (enable) {
+          enableDomWatching();
+        } else {
+          disableDomWatching();
+        }
+      }
+    };
   }());
 
   /*****************************************************************************
@@ -655,7 +681,8 @@ if (!cordova) {
         encoding: encoding,
         spherical: spherical,
         poly: poly
-    }
+    },
+    settings: pluginInternals,
   };
 
   cordova.addConstructor(function() {

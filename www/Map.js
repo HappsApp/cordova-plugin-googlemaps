@@ -69,6 +69,10 @@ Map.prototype.refreshLayout = function(event) {
     exec.call(this, null, null, this.id, 'resizeMap', []);
 };
 
+Map.prototype.recalculateTouchAreas = function () {
+    cordova.fireDocumentEvent('gmForceDomCalculation', {});
+};
+
 Map.prototype.getMap = function(mapId, div, options) {
     var self = this,
         args = [mapId];
