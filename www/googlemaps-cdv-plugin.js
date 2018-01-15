@@ -702,10 +702,10 @@ if (!cordova) {
           if (/Android/i.test(window.navigator.userAgent)) {
               //------------------------------------------------------------------------
               // If Google Maps Android API v2 is not available,
-              // display the warning alert.
+              // display the error.
               //------------------------------------------------------------------------
               cordova.exec(null, function(message) {
-                  alert(message);
+                  console.error(message);
               }, 'Environment', 'isAvailable', ['']);
           }
       }, {
