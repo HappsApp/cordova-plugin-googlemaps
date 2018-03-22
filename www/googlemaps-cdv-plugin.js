@@ -481,6 +481,7 @@ if (!cordova) {
     function resetTimer() {
       idlingCnt = -1;
       longIdlingCnt = -1;
+      isChecking = false;
       cacheDepth = {};
       cacheZIndex = {};
       pauseResizeTimer = false;
